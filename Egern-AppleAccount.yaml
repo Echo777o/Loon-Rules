@@ -1,0 +1,7 @@
+# Egern native Apple Account rules
+# Exact-domain matches from Apple Account.
+domain_set:
+  - account.apple.com
+  - appleid.cdn-apple.com
+  - idmsa.apple.com
+  - gsa.apple.com
