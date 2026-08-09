@@ -1,0 +1,14 @@
+# Egern native Speedtest China rules
+# Exact-domain matches from SpeedtestChina.lsr.
+domain_set:
+  - cesu-hz.zjtelecom.com.cn
+  - cesu-nb.zjtelecom.com.cn
+  - speedtest1.online.sh.cn
+  - speedtest.jsqiqiying.com
+  - mobile.shunicomtest.com
+  - beijing.unicomtest.com
+  - 4gsuzhou1.speedtest.jsinfo.net
+  - 5gzhenjiang.speedtest.jsinfo.net
+  - mobile.shunicomtest.com.prod.hosts.ooklaserver.net
+  - 4gsuzhou1.speedtest.jsinfo.net.prod.hosts.ooklaserver.net
+  - 5gzhenjiang.speedtest.jsinfo.net.prod.hosts.ooklaserver.net
