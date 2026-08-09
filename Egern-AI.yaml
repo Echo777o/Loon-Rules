@@ -110,18 +110,15 @@ ip_cidr6_set:
   - 2607:6bc0::/48
 
 and_set:
-  - match:
-      - domain_keyword:
-          match: chatgpt-async-webps-prod-
-      - domain_suffix:
-          match: webpubsub.azure.com
-  - match:
-      - domain_keyword:
-          match: openaicom-api-
-      - domain_suffix:
-          match: azurefd.net
-  - match:
-      - domain_keyword:
-          match: antigravity-auto-updater-
-      - domain_suffix:
-          match: run.app
+  - - !domain_keyword
+      match: chatgpt-async-webps-prod-
+    - !domain_suffix
+      match: webpubsub.azure.com
+  - - !domain_keyword
+      match: openaicom-api-
+    - !domain_suffix
+      match: azurefd.net
+  - - !domain_keyword
+      match: antigravity-auto-updater-
+    - !domain_suffix
+      match: run.app
