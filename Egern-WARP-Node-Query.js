@@ -1,0 +1,142 @@
+const IPV4_TRACE_URL = 'https://162.159.36.1/cdn-cgi/trace';
+const IPV6_TRACE_URL = 'https://[2606:4700:4700::1111]/cdn-cgi/trace';
+
+const TRACE_HEADERS = {
+  'user-agent': '1.1.1.1/6.22',
+  'cf-client-version': 'i-6.22-2308151957.1',
+  accept: 'text/plain',
+};
+
+function parseTrace(body) {
+  return Object.fromEntries(
+    String(body || '')
+      .trim()
+      .split(/\r?\n/)
+      .filter((line) => line.includes('='))
+      .map((line) => {
+        const separator = line.indexOf('=');
+        return [line.slice(0, separator), line.slice(separator + 1)];
+      }),
+  );
+}
+
+function failedTrace(error) {
+  return {
+    ip: '获取失败',
+    loc: '获取失败',
+    colo: '获取失败',
+    warp: '获取失败',
+    error: error instanceof Error ? error.message : String(error),
+  };
+}
+
+async function queryTrace(ctx, url, policy) {
+  try {
+    const options = {
+      headers: TRACE_HEADERS,
+      timeout: 10000,
+      // The original Loon script queries Cloudflare trace by IP address.
+      // Egern needs this for the IP certificate/SNI mismatch.
+      insecureTls: true,
+    };
+
+    if (policy) options.policy = policy;
+
+    const response = await ctx.http.get(url, options);
+    const body = await response.text();
+
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return parseTrace(body);
+  } catch (error) {
+    return failedTrace(error);
+  }
+}
+
+function valueOrFallback(value) {
+  return value && String(value).trim() ? String(value).trim() : '获取失败';
+}
+
+function textLine(label, value, color = '#FFFFFFDD') {
+  return {
+    type: 'text',
+    text: `${label}: ${valueOrFallback(value)}`,
+    font: { size: 'caption1' },
+    textColor: color,
+    maxLines: 1,
+    minScale: 0.7,
+  };
+}
+
+export default async function (ctx) {
+  const env = ctx.env || {};
+  const policy = String(env.POLICY || '').trim();
+  const language = String(env.LANGUAGE || 'zh-Hans').trim();
+
+  const [ipv4, ipv6] = await Promise.all([
+    queryTrace(ctx, IPV4_TRACE_URL, policy),
+    queryTrace(ctx, IPV6_TRACE_URL, policy),
+  ]);
+
+  const isEnglish = language === 'en';
+  const labels = isEnglish
+    ? {
+        title: 'WARP Info',
+        policy: 'Policy',
+        ipv4: 'IPv4',
+        ipv6: 'IPv6',
+        colo: 'Colo',
+        warp: 'WARP',
+        hint: 'Set POLICY in the module environment to test a specific node.',
+      }
+    : {
+        title: 'WARP 节点信息',
+        policy: '测试策略',
+        ipv4: 'IPv4',
+        ipv6: 'IPv6',
+        colo: '托管中心',
+        warp: '隐私保护',
+        hint: '请在模块环境变量 POLICY 中填写要测试的节点名称。',
+      };
+
+  const colo = ipv4.colo !== '获取失败' ? ipv4.colo : ipv6.colo;
+  const warp = ipv4.warp !== '获取失败' ? ipv4.warp : ipv6.warp;
+  const selectedPolicy = policy || (isEnglish ? 'Egern default' : 'Egern 默认策略');
+
+  const children = [
+    {
+      type: 'text',
+      text: labels.title,
+      font: { size: 'headline', weight: 'bold' },
+      textColor: '#FFFFFF',
+      maxLines: 1,
+      minScale: 0.7,
+    },
+    textLine(labels.policy, selectedPolicy),
+    textLine(labels.ipv4, ipv4.ip),
+    textLine(labels.ipv6, ipv6.ip),
+    textLine(labels.colo, colo),
+    textLine(labels.warp, String(warp).toUpperCase()),
+  ];
+
+  if (!policy) {
+    children.push({
+      type: 'text',
+      text: labels.hint,
+      font: { size: 'caption2' },
+      textColor: '#FFFFFF99',
+      maxLines: 2,
+      minScale: 0.65,
+    });
+  }
+
+  return {
+    type: 'widget',
+    children,
+    gap: 5,
+    padding: 14,
+    backgroundColor: '#F6821F',
+  };
+}
