@@ -1,5 +1,10 @@
-const IPV4_TRACE_URL = 'https://162.159.36.1/cdn-cgi/trace';
-const IPV6_TRACE_URL = 'https://[2606:4700:4700::1111]/cdn-cgi/trace';
+const IPV4_TRACE_URLS = [
+  'https://1.1.1.1/cdn-cgi/trace',
+  'https://162.159.36.1/cdn-cgi/trace',
+];
+const IPV6_TRACE_URLS = [
+  'https://[2606:4700:4700::1111]/cdn-cgi/trace',
+];
 
 const TRACE_HEADERS = {
   'user-agent': '1.1.1.1/6.22',
@@ -30,29 +35,37 @@ function failedTrace(error) {
   };
 }
 
-async function queryTrace(ctx, url, policy) {
-  try {
-    const options = {
-      headers: TRACE_HEADERS,
-      timeout: 10000,
-      // The original Loon script queries Cloudflare trace by IP address.
-      // Egern needs this for the IP certificate/SNI mismatch.
-      insecureTls: true,
-    };
+async function queryTrace(ctx, urls, policy) {
+  let lastError = new Error('没有可用的 Cloudflare trace 地址');
 
-    if (policy) options.policy = policy;
+  for (const url of urls) {
+    try {
+      const options = {
+        headers: TRACE_HEADERS,
+        timeout: 10000,
+        // The original Loon script queries Cloudflare trace by IP address.
+        // Egern needs this for the IP certificate/SNI mismatch.
+        insecureTls: true,
+      };
 
-    const response = await ctx.http.get(url, options);
-    const body = await response.text();
+      if (policy) options.policy = policy;
 
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`HTTP ${response.status}`);
+      const response = await ctx.http.get(url, options);
+      const body = await response.text();
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = parseTrace(body);
+      if (!result.ip) throw new Error('Cloudflare 返回内容为空');
+      return result;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
     }
-
-    return parseTrace(body);
-  } catch (error) {
-    return failedTrace(error);
   }
+
+  return failedTrace(lastError);
 }
 
 function valueOrFallback(value) {
@@ -76,8 +89,8 @@ export default async function (ctx) {
   const language = String(env.LANGUAGE || 'zh-Hans').trim();
 
   const [ipv4, ipv6] = await Promise.all([
-    queryTrace(ctx, IPV4_TRACE_URL, policy),
-    queryTrace(ctx, IPV6_TRACE_URL, policy),
+    queryTrace(ctx, IPV4_TRACE_URLS, policy),
+    queryTrace(ctx, IPV6_TRACE_URLS, policy),
   ]);
 
   const isEnglish = language === 'en';
@@ -129,6 +142,19 @@ export default async function (ctx) {
       textColor: '#FFFFFF99',
       maxLines: 2,
       minScale: 0.65,
+    });
+  }
+
+  const failed = isEnglish ? 'Request failed' : '请求失败';
+  const errors = [ipv4.error, ipv6.error].filter(Boolean);
+  if (errors.length && (ipv4.ip === '获取失败' || ipv6.ip === '获取失败')) {
+    children.push({
+      type: 'text',
+      text: `${failed}: ${errors[0]}`,
+      font: { size: 'caption2' },
+      textColor: '#FFE0E0',
+      maxLines: 2,
+      minScale: 0.55,
     });
   }
 
