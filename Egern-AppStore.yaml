@@ -1,0 +1,11 @@
+# Egern native App Store rules
+# DOMAIN-SUFFIX entries from App Store.
+domain_suffix_set:
+  - itunes.apple.com
+  - apps.apple.com
+  - mzstatic.com
+
+# DOMAIN entries from App Store.
+domain_set:
+  - itunes.apple.com
+  - ppq.apple.com
