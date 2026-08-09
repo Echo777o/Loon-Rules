@@ -5,6 +5,7 @@ const IPV4_TRACE_URLS = [
 const IPV6_TRACE_URLS = [
   'https://[2606:4700:4700::1111]/cdn-cgi/trace',
 ];
+const HOSTNAME_TRACE_URL = 'https://cloudflare.com/cdn-cgi/trace';
 
 const TRACE_HEADERS = {
   'user-agent': '1.1.1.1/6.22',
@@ -88,10 +89,20 @@ export default async function (ctx) {
   const policy = String(env.POLICY || '').trim();
   const language = String(env.LANGUAGE || 'zh-Hans').trim();
 
-  const [ipv4, ipv6] = await Promise.all([
+  let [ipv4, ipv6] = await Promise.all([
     queryTrace(ctx, IPV4_TRACE_URLS, policy),
     queryTrace(ctx, IPV6_TRACE_URLS, policy),
   ]);
+
+  // Some proxy chains return HTTP 404 for an HTTPS request whose authority is
+  // an IP address. Retry IPv4 with Cloudflare's normal hostname so the
+  // selected Egern policy can still be tested.
+  if (ipv4.ip === '获取失败') {
+    const hostnameTrace = await queryTrace(ctx, [HOSTNAME_TRACE_URL], policy);
+    if (hostnameTrace.ip !== '获取失败') {
+      ipv4 = { ...hostnameTrace, fallback: true };
+    }
+  }
 
   const isEnglish = language === 'en';
   const labels = isEnglish
@@ -142,6 +153,19 @@ export default async function (ctx) {
       textColor: '#FFFFFF99',
       maxLines: 2,
       minScale: 0.65,
+    });
+  }
+
+  if (ipv4.fallback) {
+    children.push({
+      type: 'text',
+      text: isEnglish
+        ? 'IPv4: Cloudflare hostname fallback used'
+        : 'IPv4: 已使用 Cloudflare 域名回退查询',
+      font: { size: 'caption2' },
+      textColor: '#FFFFFF99',
+      maxLines: 1,
+      minScale: 0.6,
     });
   }
 
