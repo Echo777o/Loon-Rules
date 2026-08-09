@@ -5,7 +5,11 @@ const IPV4_TRACE_URLS = [
 const IPV6_TRACE_URLS = [
   'https://[2606:4700:4700::1111]/cdn-cgi/trace',
 ];
-const HOSTNAME_TRACE_URL = 'https://cloudflare.com/cdn-cgi/trace';
+const HOSTNAME_TRACE_URLS = [
+  'https://cloudflare.com/cdn-cgi/trace',
+  'https://www.cloudflare.com/cdn-cgi/trace',
+  'https://cloudflare-dns.com/cdn-cgi/trace',
+];
 
 const TRACE_HEADERS = {
   'user-agent': '1.1.1.1/6.22',
@@ -98,7 +102,7 @@ export default async function (ctx) {
   // an IP address. Retry IPv4 with Cloudflare's normal hostname so the
   // selected Egern policy can still be tested.
   if (ipv4.ip === '获取失败') {
-    const hostnameTrace = await queryTrace(ctx, [HOSTNAME_TRACE_URL], policy);
+    const hostnameTrace = await queryTrace(ctx, HOSTNAME_TRACE_URLS, policy);
     if (hostnameTrace.ip !== '获取失败') {
       ipv4 = { ...hostnameTrace, fallback: true };
     }
