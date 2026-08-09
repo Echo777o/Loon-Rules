@@ -1,0 +1,25 @@
+name: "WARP 节点查询（Egern）"
+description: "使用 Egern 原生 Widget 查询指定策略经 Cloudflare WARP 的 IPv4、IPv6、托管中心和隐私保护状态。"
+author: "Echo777o"
+homepage: "https://kelee.one/Tool/Loon/Lpx/WARP_Node_Query.lpx"
+icon: "https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/1.1.1.1.png"
+
+env_schema:
+  POLICY:
+    name: "测试策略"
+    description: "填写 Egern 中要测试的代理节点或策略名称；留空则使用 Egern 默认策略。"
+  LANGUAGE:
+    name: "显示语言"
+    options:
+      - "zh-Hans"
+      - "en"
+
+scriptings:
+  - generic:
+      name: "WARP 节点查询"
+      script_url: "https://raw.githubusercontent.com/Echo777o/Loon-Rules/main/Egern-WARP-Node-Query.js"
+      timeout: 20
+      update_interval: 86400
+
+widgets:
+  - name: "WARP 节点查询"
