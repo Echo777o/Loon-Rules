@@ -1,0 +1,21 @@
+# Tiger Brokers / 老虎证券
+# Source: user-provided traffic screenshot, 2026-10-13.
+# 15 exact domains and 1 IPv4 address; policy is assigned by RULE-SET.
+# Ports are not restricted. No broader domain suffixes are included.
+
+DOMAIN,hq-perm.skytigris.cn
+DOMAIN,mnt-report.skytigris.cn
+DOMAIN,ams-account-tbhk.iotaskyt.com
+DOMAIN,trade-tbhk.iotaskyt.com
+DOMAIN,ams-customer-tbhk.iotaskyt.com
+DOMAIN,community-service.tradeup.com
+DOMAIN,live.skytigris.cn
+DOMAIN,crypto-live.skytigris.cn
+DOMAIN,bff-mobile.skytigris.cn
+DOMAIN,da.tigerfintech.com
+DOMAIN,quote-live.skytigris.cn
+DOMAIN,hq2.skytigris.cn
+DOMAIN,marketing.skytigris.cn
+DOMAIN,ms.tigerfintech.com
+DOMAIN,static.tigerbbs.com
+IP-CIDR,123.249.11.137/32,no-resolve
